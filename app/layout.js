@@ -3,6 +3,7 @@ import './globals.css'
 export const metadata = {
   title: 'Omaxe Treasury — Invoice Processing Platform',
   description: 'Corporate Treasury & Outflow Management',
+  icons: { icon: '/favicon.svg' },
 }
 
 export default function RootLayout({ children }) {
