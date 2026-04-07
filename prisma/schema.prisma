@@ -1,0 +1,111 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  ADMIN
+  TEAM_A
+  TEAM_B
+  TEAM_C
+}
+
+enum InvoiceStatus {
+  ENTERED
+  PROCESSING
+  HOLD
+  MOVED_TO_AP
+  PAYMENT_HOLD
+  PAID
+}
+
+enum BillType {
+  STANDARD
+  PREPAYMENT
+}
+
+model User {
+  id          String   @id @default(cuid())
+  name        String
+  username    String   @unique
+  password    String
+  role        Role
+  designation String?
+  initials    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  invoicesAssigned Invoice[] @relation("AssignedTo")
+  invoicesEntered  Invoice[] @relation("EnteredBy")
+}
+
+model Department {
+  id        String    @id @default(cuid())
+  name      String    @unique
+  createdAt DateTime  @default(now())
+  invoices  Invoice[]
+}
+
+model Company {
+  id        String    @id @default(cuid())
+  name      String    @unique
+  createdAt DateTime  @default(now())
+  invoices  Invoice[]
+  projects  Project[]
+}
+
+model Project {
+  id        String    @id @default(cuid())
+  name      String    @unique
+  companyId String?
+  company   Company?  @relation(fields: [companyId], references: [id])
+  createdAt DateTime  @default(now())
+  invoices  Invoice[]
+}
+
+model Invoice {
+  id            String        @id @default(cuid())
+  invoiceNumber String        @unique
+  billNo        String?
+  billDate      DateTime
+  entryDate     DateTime      @default(now())
+  billType      BillType      @default(STANDARD)
+  status        InvoiceStatus @default(ENTERED)
+  holdReason    String?
+
+  vendorName    String
+  hod           String?
+  expenseNature String?
+
+  grossAmount     Decimal @db.Decimal(15, 2)
+  tds             Decimal @default(0) @db.Decimal(15, 2)
+  wct             Decimal @default(0) @db.Decimal(15, 2)
+  advanceAdj      Decimal @default(0) @db.Decimal(15, 2)
+  otherDeductions Decimal @default(0) @db.Decimal(15, 2)
+  netPayable      Decimal @db.Decimal(15, 2)
+
+  departmentId String?
+  department   Department? @relation(fields: [departmentId], references: [id])
+  companyId    String?
+  company      Company?    @relation(fields: [companyId], references: [id])
+  projectId    String?
+  project      Project?    @relation(fields: [projectId], references: [id])
+  assignedToId String?
+  assignedTo   User?       @relation("AssignedTo", fields: [assignedToId], references: [id])
+  enteredById  String?
+  enteredBy    User?       @relation("EnteredBy", fields: [enteredById], references: [id])
+
+  erpPostedAt   DateTime?
+  paymentDoneAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([departmentId])
+  @@index([assignedToId])
+  @@index([entryDate])
+}
